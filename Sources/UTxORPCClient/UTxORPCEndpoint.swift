@@ -1,0 +1,90 @@
+import Foundation
+import GRPCCore
+import GRPCNIOTransportHTTP2
+
+/// Where a UTxO RPC server listens and how to reach it.
+///
+/// - A hosted or self-run server (Dolos, Demeter) listens on TCP, usually with TLS.
+///   Hosted providers often want an API key header, for example Demeter's
+///   `dmtr-api-key`.
+/// - cardano-node 11.1.x serves UTxO RPC only on a Unix socket (`rpc.sock`, next to
+///   `node.socket`), always in plaintext.
+public struct UTxORPCEndpoint: Sendable, Hashable {
+    public enum Target: Sendable, Hashable {
+        case host(String, port: Int)
+        case unixSocket(path: String)
+    }
+
+    public var target: Target
+    public var useTLS: Bool
+    /// Sent as gRPC metadata on every call. Keys must be lowercase.
+    public var headers: [String: String]
+
+    public init(target: Target, useTLS: Bool, headers: [String: String] = [:]) {
+        self.target = target
+        self.useTLS = useTLS
+        self.headers = headers
+    }
+
+    /// A node's local `rpc.sock`.
+    public static func unixSocket(_ path: String) -> Self {
+        Self(target: .unixSocket(path: path), useTLS: false)
+    }
+
+    /// Parses `https://host[:port]` (TLS, default port 443), `http://host[:port]`
+    /// (plaintext, default port 80) or `unix:///path/to/rpc.sock`.
+    public init(url: URL, headers: [String: String] = [:]) throws {
+        switch url.scheme?.lowercased() {
+        case "unix":
+            guard !url.path.isEmpty else { throw UTxORPCClientError.invalidURL(url) }
+            self.init(target: .unixSocket(path: url.path), useTLS: false, headers: headers)
+        case "https":
+            guard let host = url.host, !host.isEmpty else { throw UTxORPCClientError.invalidURL(url) }
+            self.init(target: .host(host, port: url.port ?? 443), useTLS: true, headers: headers)
+        case "http":
+            guard let host = url.host, !host.isEmpty else { throw UTxORPCClientError.invalidURL(url) }
+            self.init(target: .host(host, port: url.port ?? 80), useTLS: false, headers: headers)
+        default:
+            throw UTxORPCClientError.invalidURL(url)
+        }
+    }
+
+    func makeTransport() throws -> HTTP2ClientTransport.Posix {
+        let resolvable: any ResolvableTarget
+        switch target {
+        case .host(let host, let port):
+            resolvable = .dns(host: host, port: port)
+        case .unixSocket(let path):
+            resolvable = .unixDomainSocket(path: path)
+        }
+        return try HTTP2ClientTransport.Posix(
+            target: resolvable,
+            transportSecurity: useTLS ? .tls : .plaintext
+        )
+    }
+
+    var interceptors: [any ClientInterceptor] {
+        headers.isEmpty ? [] : [HeaderInterceptor(headers: headers)]
+    }
+}
+
+public enum UTxORPCClientError: Error, Sendable, Equatable {
+    case invalidURL(URL)
+}
+
+/// Adds fixed metadata (API keys) to every request.
+struct HeaderInterceptor: ClientInterceptor {
+    let headers: [String: String]
+
+    func intercept<Input: Sendable, Output: Sendable>(
+        request: StreamingClientRequest<Input>,
+        context: ClientContext,
+        next: (StreamingClientRequest<Input>, ClientContext) async throws -> StreamingClientResponse<Output>
+    ) async throws -> StreamingClientResponse<Output> {
+        var request = request
+        for (key, value) in headers {
+            request.metadata.addString(value, forKey: key.lowercased())
+        }
+        return try await next(request, context)
+    }
+}
