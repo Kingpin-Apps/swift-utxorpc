@@ -3729,10 +3729,10 @@ public nonisolated struct Utxorpc_V1beta_Cardano_EraSummaries: Sendable {
   public init() {}
 }
 
-/// A single evaluation report entry, used for both script errors and execution
-/// traces. The purpose and index fields identify which redeemer produced the
-/// entry, allowing the client to correlate errors and traces with specific
-/// script executions.
+/// A single evaluation report entry, used for script errors, execution traces,
+/// and transaction-level evaluation errors (e.g. balance mismatches). When the
+/// entry relates to a specific redeemer, purpose and index identify which one;
+/// for transaction-level errors these fields are absent.
 public nonisolated struct Utxorpc_V1beta_Cardano_EvalReport: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -3742,14 +3742,31 @@ public nonisolated struct Utxorpc_V1beta_Cardano_EvalReport: Sendable {
   public var msg: String = String()
 
   /// Purpose of the redeemer that produced this entry.
-  public var purpose: Utxorpc_V1beta_Cardano_RedeemerPurpose = .unspecified
+  public var purpose: Utxorpc_V1beta_Cardano_RedeemerPurpose {
+    get {_purpose ?? .unspecified}
+    set {_purpose = newValue}
+  }
+  /// Returns true if `purpose` has been explicitly set.
+  public var hasPurpose: Bool {self._purpose != nil}
+  /// Clears the value of `purpose`. Subsequent reads from it will return its default value.
+  public mutating func clearPurpose() {self._purpose = nil}
 
   /// 0-based index of the redeemer within its purpose.
-  public var index: UInt32 = 0
+  public var index: UInt32 {
+    get {_index ?? 0}
+    set {_index = newValue}
+  }
+  /// Returns true if `index` has been explicitly set.
+  public var hasIndex: Bool {self._index != nil}
+  /// Clears the value of `index`. Subsequent reads from it will return its default value.
+  public mutating func clearIndex() {self._index = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _purpose: Utxorpc_V1beta_Cardano_RedeemerPurpose? = nil
+  fileprivate var _index: UInt32? = nil
 }
 
 /// Result of evaluating a transaction against the current ledger state.
@@ -3778,7 +3795,7 @@ public nonisolated struct Utxorpc_V1beta_Cardano_TxEval: Sendable {
   /// Clears the value of `exUnits`. Subsequent reads from it will return its default value.
   public mutating func clearExUnits() {self._exUnits = nil}
 
-  /// Per-redeemer script execution errors.
+  /// Script execution and transaction-level evaluation errors.
   public var errors: [Utxorpc_V1beta_Cardano_EvalReport] = []
 
   /// Per-redeemer script execution traces.
@@ -9787,30 +9804,34 @@ nonisolated extension Utxorpc_V1beta_Cardano_EvalReport: SwiftProtobuf.Message, 
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.msg) }()
-      case 2: try { try decoder.decodeSingularEnumField(value: &self.purpose) }()
-      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.index) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self._purpose) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self._index) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.msg.isEmpty {
       try visitor.visitSingularStringField(value: self.msg, fieldNumber: 1)
     }
-    if self.purpose != .unspecified {
-      try visitor.visitSingularEnumField(value: self.purpose, fieldNumber: 2)
-    }
-    if self.index != 0 {
-      try visitor.visitSingularUInt32Field(value: self.index, fieldNumber: 3)
-    }
+    try { if let v = self._purpose {
+      try visitor.visitSingularEnumField(value: v, fieldNumber: 2)
+    } }()
+    try { if let v = self._index {
+      try visitor.visitSingularUInt32Field(value: v, fieldNumber: 3)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Utxorpc_V1beta_Cardano_EvalReport, rhs: Utxorpc_V1beta_Cardano_EvalReport) -> Bool {
     if lhs.msg != rhs.msg {return false}
-    if lhs.purpose != rhs.purpose {return false}
-    if lhs.index != rhs.index {return false}
+    if lhs._purpose != rhs._purpose {return false}
+    if lhs._index != rhs._index {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

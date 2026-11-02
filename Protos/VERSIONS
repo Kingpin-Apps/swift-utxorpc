@@ -1,8 +1,11 @@
 # Pinned sources for the vendored .proto files. Bump a pin, copy the files
 # again, then run `just generate`.
 
-utxorpc/v1beta    https://github.com/utxorpc/spec            tag v0.19.2 (433970c)    proto/utxorpc/v1beta/{cardano,query,submit,sync,watch}
-cardano/rpc       https://github.com/IntersectMBO/cardano-api tag cardano-rpc-11.2.0.0 (a4dde7a) cardano-rpc/proto/cardano/rpc/node.proto
+utxorpc/v1beta/{cardano,query,submit,sync}  https://github.com/IntersectMBO/cardano-api tag cardano-rpc-11.5.0.0 (30e6ca3) cardano-rpc/proto/utxorpc/v1beta
+utxorpc/v1beta/watch                        https://github.com/utxorpc/spec            tag v0.19.2 (433970c)               proto/utxorpc/v1beta/watch
+cardano/rpc                                 https://github.com/IntersectMBO/cardano-api tag cardano-rpc-11.5.0.0 (30e6ca3) cardano-rpc/proto/cardano/rpc/node.proto
 
-# cardano-node 11.1.x pins cardano-rpc 11.2 and ships its own older copy of
-# utxorpc/v1beta. Spec v0.19.2 is a wire-compatible superset of that copy.
+# cardano-rpc 11.5's v1beta copy is spec v0.19.2 plus utxorpc/spec#203
+# (EvalReport.purpose and index made optional), which is not in a spec tag
+# yet. cardano-rpc ships no watch.proto, so that one comes from the spec.
+# Older nodes (11.1.x pin cardano-rpc 11.2) are wire-compatible with this set.

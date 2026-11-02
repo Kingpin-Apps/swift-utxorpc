@@ -5,9 +5,10 @@ import UTxORPCCardanoNode
 
 /// The UTxO RPC service clients over one connection.
 ///
-/// Not every server implements every service: cardano-node 11.1.x has no Watch
-/// service and no `ReadTx`, `DumpHistory` or mempool calls, and only it serves
-/// ``node``. Calls a server lacks fail with `RPCError` code `.unimplemented`.
+/// Not every server implements every service: cardano-node has no Watch service
+/// and no `ReadTx`, `ReadData` or `DumpHistory`, node 11.1.x also lacks
+/// `ReadEraSummary` and the mempool calls, and only the node serves ``node``.
+/// Calls a server lacks fail with `RPCError` code `.unimplemented`.
 public struct UTxORPCClient<Transport: ClientTransport>: Sendable {
     public let query: Utxorpc_V1beta_Query_QueryService.Client<Transport>
     public let submit: Utxorpc_V1beta_Submit_SubmitService.Client<Transport>

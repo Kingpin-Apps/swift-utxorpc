@@ -43,9 +43,12 @@ try await withUTxORPCClient(endpoint: endpoint) { client in
 }
 ```
 
-Servers implement different parts of the spec. cardano-node 11.1.x has no Watch
-service, `ReadTx`, `DumpHistory` or mempool calls, and its `SearchUtxos` only
-accepts an exact address. Missing calls fail with `RPCError` code `.unimplemented`.
+Servers implement different parts of the spec. cardano-node never serves the Watch
+service, `ReadTx`, `ReadData`, `ReadState` or `DumpHistory`, and its `SearchUtxos`
+only accepts exact addresses. Node 11.1.x (cardano-rpc 11.2) also lacks
+`ReadEraSummary` and the mempool calls, which node 11.2.0 (cardano-rpc 11.5) adds,
+along with TCP and TLS listeners. Missing calls fail with `RPCError` code
+`.unimplemented`.
 
 ## Protos and code generation
 
