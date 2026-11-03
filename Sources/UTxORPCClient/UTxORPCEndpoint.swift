@@ -9,6 +9,8 @@ import GRPCNIOTransportHTTP2
 ///   `dmtr-api-key`.
 /// - cardano-node 11.1.x serves UTxO RPC only on a Unix socket (`rpc.sock`, next to
 ///   `node.socket`), always in plaintext.
+/// - cardano-node-api speaks only the older v1alpha API; set ``apiVersion`` to
+///   `.v1alpha` for it.
 public struct UTxORPCEndpoint: Sendable, Hashable {
     public enum Target: Sendable, Hashable {
         case host(String, port: Int)
@@ -19,11 +21,19 @@ public struct UTxORPCEndpoint: Sendable, Hashable {
     public var useTLS: Bool
     /// Sent as gRPC metadata on every call. Keys must be lowercase.
     public var headers: [String: String]
+    /// The API version the server speaks.
+    public var apiVersion: UTxORPCAPIVersion
 
-    public init(target: Target, useTLS: Bool, headers: [String: String] = [:]) {
+    public init(
+        target: Target,
+        useTLS: Bool,
+        headers: [String: String] = [:],
+        apiVersion: UTxORPCAPIVersion = .v1beta
+    ) {
         self.target = target
         self.useTLS = useTLS
         self.headers = headers
+        self.apiVersion = apiVersion
     }
 
     /// A node's local `rpc.sock`.
@@ -33,23 +43,23 @@ public struct UTxORPCEndpoint: Sendable, Hashable {
 
     /// Parses `https://host[:port]` (TLS, default port 443), `http://host[:port]`
     /// (plaintext, default port 80) or `unix:///path/to/rpc.sock`.
-    public init(url: URL, headers: [String: String] = [:]) throws {
+    public init(url: URL, headers: [String: String] = [:], apiVersion: UTxORPCAPIVersion = .v1beta) throws {
         switch url.scheme?.lowercased() {
         case "unix":
             guard !url.path.isEmpty else { throw UTxORPCClientError.invalidURL(url) }
-            self.init(target: .unixSocket(path: url.path), useTLS: false, headers: headers)
+            self.init(target: .unixSocket(path: url.path), useTLS: false, headers: headers, apiVersion: apiVersion)
         case "https":
             guard let host = url.host, !host.isEmpty else { throw UTxORPCClientError.invalidURL(url) }
-            self.init(target: .host(host, port: url.port ?? 443), useTLS: true, headers: headers)
+            self.init(target: .host(host, port: url.port ?? 443), useTLS: true, headers: headers, apiVersion: apiVersion)
         case "http":
             guard let host = url.host, !host.isEmpty else { throw UTxORPCClientError.invalidURL(url) }
-            self.init(target: .host(host, port: url.port ?? 80), useTLS: false, headers: headers)
+            self.init(target: .host(host, port: url.port ?? 80), useTLS: false, headers: headers, apiVersion: apiVersion)
         default:
             throw UTxORPCClientError.invalidURL(url)
         }
     }
 
-    func makeTransport() throws -> HTTP2ClientTransport.Posix {
+    func makeTransport() throws -> UTxORPCTransport<HTTP2ClientTransport.Posix> {
         let resolvable: any ResolvableTarget
         switch target {
         case .host(let host, let port):
@@ -57,10 +67,11 @@ public struct UTxORPCEndpoint: Sendable, Hashable {
         case .unixSocket(let path):
             resolvable = .unixDomainSocket(path: path)
         }
-        return try HTTP2ClientTransport.Posix(
+        let transport = try HTTP2ClientTransport.Posix(
             target: resolvable,
             transportSecurity: useTLS ? .tls : .plaintext
         )
+        return UTxORPCTransport(wrapping: transport, apiVersion: apiVersion)
     }
 
     var interceptors: [any ClientInterceptor] {

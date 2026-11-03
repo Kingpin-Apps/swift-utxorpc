@@ -18,14 +18,20 @@ tools:
 
 # Regenerate the Swift code from Protos/
 generate: tools
-    rm -rf {{gen}}/UTxORPC/Generated {{gen}}/UTxORPCCardanoNode/Generated
-    mkdir -p {{gen}}/UTxORPC/Generated {{gen}}/UTxORPCCardanoNode/Generated
+    rm -rf {{gen}}/UTxORPC/Generated {{gen}}/UTxORPCV1Alpha/Generated {{gen}}/UTxORPCCardanoNode/Generated
+    mkdir -p {{gen}}/UTxORPC/Generated {{gen}}/UTxORPCV1Alpha/Generated {{gen}}/UTxORPCCardanoNode/Generated
     {{tools}}/protoc -I Protos \
         --plugin={{tools}}/protoc-gen-swift \
         --plugin={{tools}}/protoc-gen-grpc-swift-2 \
         --swift_out={{gen}}/UTxORPC/Generated --swift_opt=Visibility=Public,FileNaming=PathToUnderscores \
         --grpc-swift-2_out={{gen}}/UTxORPC/Generated --grpc-swift-2_opt=Visibility=Public,FileNaming=PathToUnderscores \
-        $(find Protos/utxorpc -name '*.proto' | sort)
+        $(find Protos/utxorpc/v1beta -name '*.proto' | sort)
+    {{tools}}/protoc -I Protos \
+        --plugin={{tools}}/protoc-gen-swift \
+        --plugin={{tools}}/protoc-gen-grpc-swift-2 \
+        --swift_out={{gen}}/UTxORPCV1Alpha/Generated --swift_opt=Visibility=Public,FileNaming=PathToUnderscores \
+        --grpc-swift-2_out={{gen}}/UTxORPCV1Alpha/Generated --grpc-swift-2_opt=Visibility=Public,FileNaming=PathToUnderscores \
+        $(find Protos/utxorpc/v1alpha -name '*.proto' | sort)
     {{tools}}/protoc -I Protos \
         --plugin={{tools}}/protoc-gen-swift \
         --plugin={{tools}}/protoc-gen-grpc-swift-2 \

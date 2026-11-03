@@ -9,10 +9,12 @@ import UTxORPCClient
 /// Talks to real servers. Off unless the environment names one:
 /// - `UTXORPC_NODE_SOCKET`: a cardano-node `rpc.sock` (node started with `EnableRpc`)
 /// - `UTXORPC_URL` (+ optional `UTXORPC_API_KEY`, sent as `dmtr-api-key`): Dolos or Demeter
+/// - `UTXORPC_V1ALPHA_URL`: a v1alpha-only server such as cardano-node-api
 @Suite("Live servers")
 struct LiveTests {
     static let nodeSocket = ProcessInfo.processInfo.environment["UTXORPC_NODE_SOCKET"]
     static let serverURL = ProcessInfo.processInfo.environment["UTXORPC_URL"]
+    static let v1alphaURL = ProcessInfo.processInfo.environment["UTXORPC_V1ALPHA_URL"]
 
     @Test(.enabled(if: nodeSocket != nil, "set UTXORPC_NODE_SOCKET"))
     func cardanoNode() async throws {
@@ -66,5 +68,17 @@ struct LiveTests {
         await connection.close()
         print("UTxO RPC 10 × ReadTip: \(perCall) one connection each, \(reused) over one connection")
         #expect(reused < perCall)
+    }
+
+    @Test(.enabled(if: v1alphaURL != nil, "set UTXORPC_V1ALPHA_URL"))
+    func v1alphaServer() async throws {
+        let endpoint = try UTxORPCEndpoint(url: URL(string: Self.v1alphaURL!)!, apiVersion: .v1alpha)
+        try await withUTxORPCClient(endpoint: endpoint) { client in
+            let tip = try await client.sync.readTip(Utxorpc_V1beta_Sync_ReadTipRequest()).tip
+            #expect(tip.slot > 0)
+            #expect(tip.hash.count == 32)
+            let params = try await client.query.readParams(Utxorpc_V1beta_Query_ReadParamsRequest())
+            #expect(params.values.cardano.maxTxSize > 0)
+        }
     }
 }

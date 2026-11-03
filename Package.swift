@@ -15,6 +15,7 @@ let package = Package(
     ],
     products: [
         .library(name: "UTxORPC", targets: ["UTxORPC"]),
+        .library(name: "UTxORPCV1Alpha", targets: ["UTxORPCV1Alpha"]),
         .library(name: "UTxORPCCardanoNode", targets: ["UTxORPCCardanoNode"]),
         .library(name: "UTxORPCClient", targets: ["UTxORPCClient"]),
     ],
@@ -28,6 +29,16 @@ let package = Package(
         // Messages and service clients generated from Protos/utxorpc (`just generate`).
         .target(
             name: "UTxORPC",
+            dependencies: [
+                .product(name: "GRPCCore", package: "grpc-swift-2"),
+                .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            ]
+        ),
+        // The older v1alpha API, generated from Protos/utxorpc/v1alpha, for servers
+        // that never moved to v1beta (cardano-node-api).
+        .target(
+            name: "UTxORPCV1Alpha",
             dependencies: [
                 .product(name: "GRPCCore", package: "grpc-swift-2"),
                 .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
@@ -57,6 +68,7 @@ let package = Package(
             name: "UTxORPCTests",
             dependencies: [
                 "UTxORPC",
+                "UTxORPCV1Alpha",
                 "UTxORPCCardanoNode",
                 "UTxORPCClient",
                 .product(name: "GRPCCore", package: "grpc-swift-2"),

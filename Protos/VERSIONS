@@ -3,6 +3,7 @@
 
 utxorpc/v1beta/{cardano,query,submit,sync}  https://github.com/IntersectMBO/cardano-api tag cardano-rpc-11.5.0.0 (30e6ca3) cardano-rpc/proto/utxorpc/v1beta
 utxorpc/v1beta/watch                        https://github.com/utxorpc/spec            tag v0.19.2 (433970c)               proto/utxorpc/v1beta/watch
+utxorpc/v1alpha/*                           https://github.com/utxorpc/spec            tag v0.19.2 (433970c)               proto/utxorpc/v1alpha (bitcoin left out)
 cardano/rpc                                 https://github.com/IntersectMBO/cardano-api tag cardano-rpc-11.5.0.0 (30e6ca3) cardano-rpc/proto/cardano/rpc/node.proto
 
 # cardano-rpc 11.5's v1beta copy is spec v0.19.2 plus utxorpc/spec#203

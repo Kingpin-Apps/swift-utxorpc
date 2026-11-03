@@ -15,9 +15,9 @@ import GRPCNIOTransportHTTP2
 /// ```
 public final class UTxORPCConnection: Sendable {
     /// The service clients, all over this one connection.
-    public let client: UTxORPCClient<HTTP2ClientTransport.Posix>
+    public let client: UTxORPCClient<UTxORPCTransport<HTTP2ClientTransport.Posix>>
 
-    private let grpc: GRPCClient<HTTP2ClientTransport.Posix>
+    private let grpc: GRPCClient<UTxORPCTransport<HTTP2ClientTransport.Posix>>
     private let connections: Task<Void, Never>
 
     public init(endpoint: UTxORPCEndpoint) throws {

@@ -9,6 +9,10 @@ import UTxORPCCardanoNode
 /// and no `ReadTx`, `ReadData` or `DumpHistory`, node 11.1.x also lacks
 /// `ReadEraSummary` and the mempool calls, and only the node serves ``node``.
 /// Calls a server lacks fail with `RPCError` code `.unimplemented`.
+///
+/// The clients are v1beta. Against a v1alpha server (cardano-node-api), an
+/// endpoint with `apiVersion: .v1alpha` routes them to the v1alpha services;
+/// see ``UTxORPCTransport``.
 public struct UTxORPCClient<Transport: ClientTransport>: Sendable {
     public let query: Utxorpc_V1beta_Query_QueryService.Client<Transport>
     public let submit: Utxorpc_V1beta_Submit_SubmitService.Client<Transport>
@@ -31,7 +35,7 @@ public struct UTxORPCClient<Transport: ClientTransport>: Sendable {
 public func withUTxORPCClient<Result: Sendable>(
     endpoint: UTxORPCEndpoint,
     isolation: isolated (any Actor)? = #isolation,
-    _ body: (UTxORPCClient<HTTP2ClientTransport.Posix>) async throws -> Result
+    _ body: (UTxORPCClient<UTxORPCTransport<HTTP2ClientTransport.Posix>>) async throws -> Result
 ) async throws -> Result {
     try await withGRPCClient(
         transport: endpoint.makeTransport(),

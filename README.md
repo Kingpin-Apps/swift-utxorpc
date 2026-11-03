@@ -9,6 +9,7 @@ and [Demeter](https://demeter.run).
 | Product | What it holds |
 |---|---|
 | `UTxORPC` | Messages and service clients generated from the `utxorpc/v1beta` protos: Query, Submit, Sync, Watch and the Cardano types. |
+| `UTxORPCV1Alpha` | The same, generated from the older `utxorpc/v1alpha` protos. |
 | `UTxORPCCardanoNode` | cardano-node's own `cardano.rpc.Node` service (`GetEra`, `GetProtocolParamsJson`). |
 | `UTxORPCClient` | Connection setup over TCP, TLS or a Unix socket, with API-key headers. |
 
@@ -64,6 +65,25 @@ only accepts exact addresses. Node 11.1.x (cardano-rpc 11.2) also lacks
 along with TCP and TLS listeners. Missing calls fail with `RPCError` code
 `.unimplemented`.
 
+### v1alpha servers
+
+cardano-node-api serves only the older v1alpha API. Set the endpoint's
+`apiVersion` and use the same v1beta clients:
+
+```swift
+let endpoint = try UTxORPCEndpoint(url: URL(string: "http://127.0.0.1:9090")!, apiVersion: .v1alpha)
+try await withUTxORPCClient(endpoint: endpoint) { client in
+    let tip = try await client.sync.readTip(Utxorpc_V1beta_Sync_ReadTipRequest()).tip
+}
+```
+
+The transport sends each call to the matching `utxorpc.v1alpha` service. The
+v1alpha messages use the same field numbers and types as v1beta, so they decode
+unchanged, with two gaps in parsed blocks and transactions: v1alpha mint
+quantities read as 0, and v1alpha redeemers are not in `WitnessSet.redeemers`.
+Native CBOR is unaffected. For exact v1alpha fields, use the clients in
+`UTxORPCV1Alpha` directly.
+
 ## Protos and code generation
 
 The `.proto` files in `Protos/` are pinned in `Protos/VERSIONS`. The generated
@@ -83,6 +103,7 @@ only when the environment names a server:
 
 - `UTXORPC_NODE_SOCKET`: a cardano-node `rpc.sock` (node config `"EnableRpc": true`)
 - `UTXORPC_URL`, plus optional `UTXORPC_API_KEY` sent as `dmtr-api-key`
+- `UTXORPC_V1ALPHA_URL`: a v1alpha server such as cardano-node-api
 
 ## License
 
