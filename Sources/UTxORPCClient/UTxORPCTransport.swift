@@ -26,9 +26,12 @@ public enum UTxORPCAPIVersion: String, Sendable, Hashable, CaseIterable {
 public struct UTxORPCTransport<Base: ClientTransport>: ClientTransport {
     public typealias Bytes = Base.Bytes
 
+    /// The transport the calls travel over.
     public let base: Base
+    /// The API version the server speaks.
     public let apiVersion: UTxORPCAPIVersion
 
+    /// Wraps `base`, sending calls to the services of `apiVersion`.
     public init(wrapping base: Base, apiVersion: UTxORPCAPIVersion) {
         self.base = base
         self.apiVersion = apiVersion

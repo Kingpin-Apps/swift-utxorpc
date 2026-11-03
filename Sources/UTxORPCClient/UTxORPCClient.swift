@@ -14,9 +14,13 @@ import UTxORPCCardanoNode
 /// endpoint with `apiVersion: .v1alpha` routes them to the v1alpha services;
 /// see ``UTxORPCTransport``.
 public struct UTxORPCClient<Transport: ClientTransport>: Sendable {
+    /// Ledger queries: protocol parameters, genesis, UTxOs, transactions, era summary.
     public let query: Utxorpc_V1beta_Query_QueryService.Client<Transport>
+    /// Transaction submission and evaluation, and the mempool.
     public let submit: Utxorpc_V1beta_Submit_SubmitService.Client<Transport>
+    /// The chain tip, blocks, and following the chain.
     public let sync: Utxorpc_V1beta_Sync_SyncService.Client<Transport>
+    /// Streams of transactions matching a predicate.
     public let watch: Utxorpc_V1beta_Watch_WatchService.Client<Transport>
     /// cardano-node's own `cardano.rpc.Node` service.
     public let node: Cardano_Rpc_Node.Client<Transport>

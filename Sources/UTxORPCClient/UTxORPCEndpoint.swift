@@ -12,18 +12,24 @@ import GRPCNIOTransportHTTP2
 /// - cardano-node-api speaks only the older v1alpha API; set ``apiVersion`` to
 ///   `.v1alpha` for it.
 public struct UTxORPCEndpoint: Sendable, Hashable {
+    /// The address the server listens on.
     public enum Target: Sendable, Hashable {
+        /// A host name or IP address and a TCP port.
         case host(String, port: Int)
+        /// A Unix domain socket, such as a node's `rpc.sock`.
         case unixSocket(path: String)
     }
 
+    /// The address the server listens on.
     public var target: Target
+    /// Whether to connect over TLS. Unix sockets are always plaintext.
     public var useTLS: Bool
     /// Sent as gRPC metadata on every call. Keys must be lowercase.
     public var headers: [String: String]
     /// The API version the server speaks.
     public var apiVersion: UTxORPCAPIVersion
 
+    /// An endpoint from its parts.
     public init(
         target: Target,
         useTLS: Bool,
@@ -79,7 +85,9 @@ public struct UTxORPCEndpoint: Sendable, Hashable {
     }
 }
 
+/// Errors from setting up a UTxO RPC connection.
 public enum UTxORPCClientError: Error, Sendable, Equatable {
+    /// The URL has no host, or a scheme other than `https`, `http` or `unix`.
     case invalidURL(URL)
 }
 

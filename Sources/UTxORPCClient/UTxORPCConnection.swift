@@ -20,6 +20,9 @@ public final class UTxORPCConnection: Sendable {
     private let grpc: GRPCClient<UTxORPCTransport<HTTP2ClientTransport.Posix>>
     private let connections: Task<Void, Never>
 
+    /// Sets up the connection to `endpoint`; it opens on the first call.
+    ///
+    /// - Throws: When the transport can't be created for the endpoint.
     public init(endpoint: UTxORPCEndpoint) throws {
         let grpc = GRPCClient(transport: try endpoint.makeTransport(), interceptors: endpoint.interceptors)
         self.grpc = grpc
