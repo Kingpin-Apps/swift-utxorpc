@@ -1,4 +1,4 @@
 version: 1
 builder:
   configs:
-    - documentation_targets: [UTxORPC, UTxORPCClient, UTxORPCCardanoNode]
+    - documentation_targets: [UTxORPC, UTxORPCV1Alpha, UTxORPCClient, UTxORPCCardanoNode]
