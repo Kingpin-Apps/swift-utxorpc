@@ -45,4 +45,26 @@ struct LiveTests {
             #expect(params.values.cardano.maxTxSize > 0)
         }
     }
+
+    /// Ten calls over one TLS connection against ten connections, one per call.
+    @Test(.enabled(if: serverURL != nil, "set UTXORPC_URL"))
+    func connectionReuseSavesTheHandshake() async throws {
+        let headers = ProcessInfo.processInfo.environment["UTXORPC_API_KEY"].map { ["dmtr-api-key": $0] } ?? [:]
+        let endpoint = try UTxORPCEndpoint(url: URL(string: Self.serverURL!)!, headers: headers)
+        let request = Utxorpc_V1beta_Sync_ReadTipRequest()
+        let clock = ContinuousClock()
+
+        let perCall = try await clock.measure {
+            for _ in 0..<10 {
+                try await withUTxORPCClient(endpoint: endpoint) { _ = try await $0.sync.readTip(request) }
+            }
+        }
+        let connection = try UTxORPCConnection(endpoint: endpoint)
+        let reused = try await clock.measure {
+            for _ in 0..<10 { _ = try await connection.client.sync.readTip(request) }
+        }
+        await connection.close()
+        print("UTxO RPC 10 × ReadTip: \(perCall) one connection each, \(reused) over one connection")
+        #expect(reused < perCall)
+    }
 }
